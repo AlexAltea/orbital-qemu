@@ -31,6 +31,7 @@
 
 #define countof(x) (sizeof(x) / sizeof((x)[0]))
 
+#define ARRAYSIZE(_ARR)          ((int)(sizeof(_ARR)/sizeof(*_ARR)))
 /* callbacks */
 static 
 VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(

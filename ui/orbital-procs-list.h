@@ -25,8 +25,6 @@
 #ifndef UI_orbital_procs_list_LIST_H_
 #define UI_orbital_procs_list_LIST_H_
 
-#include "freebsd/sys/sys/proc.h"
-#include "freebsd/sys/vm/vm_map.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -36,19 +34,34 @@ struct proc;
 struct vmspace;
 struct orbital_procs_list_t;
 
-struct orbital_proc_data {
-    struct proc proc;
-    struct vmspace vmspace; // unused until we find its offset
-};
+#ifdef __cplusplus
+namespace freebsd {
+#include "freebsd/sys/sys/proc.h"
+#include "freebsd/sys/vm/vm_map.h"
+}  // namespace freebsd
 
-struct orbital_procs_list_t *
-orbital_procs_list_create(void);
+struct orbital_proc_data {
+    struct freebsd::proc proc;
+    struct freebsd::vmspace vmspace;  // unused until we find its offset
+};
+using thread = freebsd::thread;
+#else
+struct orbital_proc_data;
+#endif
+
+struct orbital_procs_list_t *orbital_procs_list_create(void);
 
 void orbital_procs_list_destroy(struct orbital_procs_list_t *procs_list);
 
-void orbital_procs_list_add_proc(struct orbital_procs_list_t *procs_list, struct orbital_proc_data *p);
+void orbital_procs_list_add_proc(struct orbital_procs_list_t *procs_list,
+                                 struct orbital_proc_data *p);
 
-void orbital_procs_list_add_proc_thread(struct orbital_procs_list_t *procs_list, int owner_pid, struct thread *td);
+void orbital_procs_list_add_proc_thread(struct orbital_procs_list_t *procs_list,
+                                        int owner_pid,
+#ifndef __cplusplus
+                                        struct
+#endif
+                                        thread *td);
 
 void orbital_procs_list_clear(struct orbital_procs_list_t *procs_list);
 

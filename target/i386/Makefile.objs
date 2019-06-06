@@ -12,8 +12,9 @@ obj-$(call lnot,$(CONFIG_SEV)) += sev-stub.o
 ifdef CONFIG_WIN32
 obj-$(CONFIG_HAX) += hax-all.o hax-mem.o hax-windows.o
 endif
-ifdef CONFIG_DARWIN
+ifdef CONFIG_POSIX
 obj-$(CONFIG_HAX) += hax-all.o hax-mem.o hax-darwin.o
-obj-$(CONFIG_HVF) += hvf/
 endif
+obj-$(CONFIG_HVF) += hvf/
+
 obj-$(CONFIG_WHPX) += whpx-all.o

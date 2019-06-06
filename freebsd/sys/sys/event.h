@@ -29,7 +29,8 @@
 #ifndef _SYS_EVENT_H_
 #define _SYS_EVENT_H_
 
-#include <stdint.h>
+#include "freebsd/sys/sys/stdint.h"
+//#include "freebsd/sys/sys/_types.h"
 #include "freebsd/sys/sys/queue.h"
 
 #define EVFILT_READ		(-1)
@@ -55,7 +56,7 @@
 	(kevp)->udata = (f);			\
 } while(0)
 
-struct kevent {
+    struct kevent {
 	uintptr_t	ident;		/* identifier for this event */
 	short		filter;		/* filter for event */
 	u_short		flags;

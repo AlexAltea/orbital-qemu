@@ -22,7 +22,6 @@
  * THE SOFTWARE.
  */
 
-#include "orbital-procs-list.h"
 
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_vulkan.h>
@@ -34,9 +33,6 @@
 #include "imgui/imgui_impl_sdl.h"
 #include "imgui/imgui_impl_vulkan.h"
 
-#include "freebsd/sys/sys/proc.h"
-#include "freebsd/sys/vm/vm_map.h"
-
 #include <algorithm>
 #include <iostream>
 #include <map>
@@ -45,20 +41,23 @@
 #include <string>
 #include <utility>
 #include <vector>
-
+//
+#include "undefs.h"
+#include "orbital-procs-list.h"
 // TODO: Create proper layout for `thread` and remove this
 #define THREAD_NAME(td) (char *)(((uint64_t)(td)) + 0x284)
 
 struct orbital_procs_list_t
 {
     std::vector<orbital_proc_data> proc_data_list;
-    std::multimap<int32_t, thread> threads_map; // threads for each pid
+    std::multimap<int32_t, freebsd::thread>
+        threads_map;  // threads for each pid
 
     // The following fields are used as temporaries, to allow us to disregard new data when necessary.
     // Every modifications happens in these, and the results are commited (if certains conditions pass)
     // in orbital_procs_list_t::Done().
     std::vector<orbital_proc_data> proc_data_list_temp;
-    std::multimap<int32_t, thread> threads_map_temp;
+    std::multimap<int32_t, freebsd::thread> threads_map_temp;
 
     static float calc_width_for_chars(uint32_t chars) {
         auto ig_style = ImGui::GetStyle();
@@ -126,7 +125,7 @@ struct orbital_procs_list_t
         proc_data_list_temp.push_back(*p);
     }
 
-    void AddProcThread(int32_t owner_pid, struct thread *td) {
+    void AddProcThread(int32_t owner_pid, struct freebsd::thread *td) {
         threads_map_temp.emplace(owner_pid, *td);
     }
 
@@ -163,7 +162,9 @@ struct orbital_procs_list_t
 
         auto p_state_to_str = [](int p_state) {
             switch (p_state) {
-#define S(s) case proc::s: return #s;
+#define S(s)               \
+    case freebsd::proc::s: \
+        return #s;
             S(PRS_NEW)
             S(PRS_NORMAL)
             S(PRS_ZOMBIE)
@@ -365,8 +366,9 @@ void orbital_procs_list_add_proc(struct orbital_procs_list_t *procs_list, struct
     procs_list->AddProc(p);
 }
 
-void orbital_procs_list_add_proc_thread(struct orbital_procs_list_t *procs_list, int owner_pid, struct thread *td)
-{
+void orbital_procs_list_add_proc_thread(struct orbital_procs_list_t *procs_list,
+                                        int owner_pid,
+                                        struct freebsd::thread *td) {
     procs_list->AddProcThread(owner_pid, td);
 }
 
