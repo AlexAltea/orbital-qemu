@@ -55,8 +55,9 @@
 #define ORBITAL_HEIGHT 720
 
 typedef struct OrbitalUI {
+    /* window */
     bool active;
-    bool minimized;
+    enum WindowState {minimized, maximized} window_state;
     /* vulkan */
     VulkanState vk_state;
     /* sdl */
@@ -670,10 +671,11 @@ static void* orbital_display_main(void* arg)
                 event.window.windowID == SDL_GetWindowID(ui.sdl_window)) {
                 switch (event.window.event) {
                 case SDL_WINDOWEVENT_MINIMIZED:
-                    ui.minimized = true;
+                    ui.window_state = minimized;
                     break;
                 case SDL_WINDOWEVENT_MAXIMIZED:
-                    ui.minimized = false;
+                    ui.window_state = maximized;
+                    break;
                 case SDL_WINDOWEVENT_RESIZED:
                 case SDL_WINDOWEVENT_EXPOSED:
                     ImGui_ImplVulkanH_CreateWindowDataSwapChainAndFramebuffer(
@@ -686,17 +688,17 @@ static void* orbital_display_main(void* arg)
                 }
             }
         }
-		
-        if (ui.minimized == false) {
-            // Frame
+
+        if (ui.window_state == maximized) {
+            // Draw new frame
             ImGui_ImplVulkan_NewFrame();
             ImGui_ImplSDL2_NewFrame(ui.sdl_window);
             igNewFrame();
 
-            // Window
+            // Render orbital windows
             orbital_display_draw(&ui);
 
-            // Rendering
+            // Push frame to render
             igRender();
             FrameRender(wd, vks);
             FramePresent(wd, vks);
