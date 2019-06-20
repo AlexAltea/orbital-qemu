@@ -92,6 +92,7 @@ typedef struct OrbitalUI {
 
 // Global state
 OrbitalUI ui;
+bool SwapchainRebuildPending = false;
 
 bool orbital_display_active(void)
 {
@@ -246,18 +247,33 @@ static void SetupVulkanWindowData(ImGui_ImplVulkanH_WindowData* wd, VulkanState*
     //printf("[vulkan] Selected PresentMode = %d\n", wd->PresentMode);
 
     // Create SwapChain, RenderPass, Framebuffer, etc.
+    ImGui_ImplVulkanH_CreateWindowDataSwapChainAndFramebuffer(state->gpu, state->device, wd, NULL, width, height, 2);
     ImGui_ImplVulkanH_CreateWindowDataCommandBuffers(state->gpu, state->device, state->graphics_queue_node_index, wd, NULL);
-    ImGui_ImplVulkanH_CreateWindowDataSwapChainAndFramebuffer(state->gpu, state->device, wd, NULL, width, height);
 }
 
+static void orbitalRebuildSwapchain(VulkanState *vks, ImGui_ImplVulkanH_WindowData *wd, int width, int height, uint32_t min_image_count) {
+    ImGui_ImplVulkanH_CreateWindowDataSwapChainAndFramebuffer(vks->gpu, vks->device, wd, NULL, width, height, min_image_count);
+    ImGui_ImplVulkanH_CreateWindowDataCommandBuffers(vks->gpu, vks->device, vks->graphics_queue_node_index, wd, NULL);
+    wd->FrameIndex = 0;
+}
 
 static void FrameRender(ImGui_ImplVulkanH_WindowData* wd, VulkanState* vks)
 {
     VkResult err;
+    VkSemaphore image_acquired_semaphore;
 
-    VkSemaphore image_acquired_semaphore = wd->Frames[wd->FrameIndex].ImageAcquiredSemaphore;
-    err = vkAcquireNextImageKHR(vks->device, wd->Swapchain, UINT64_MAX, image_acquired_semaphore, VK_NULL_HANDLE, &wd->FrameIndex);
-    check_vk_result(err);
+    for (;;) {
+        image_acquired_semaphore = wd->Frames[wd->FrameIndex].ImageAcquiredSemaphore;
+        err = vkAcquireNextImageKHR(vks->device, wd->Swapchain, UINT64_MAX, image_acquired_semaphore, VK_NULL_HANDLE, &wd->FrameIndex);
+        if (err == VK_ERROR_OUT_OF_DATE_KHR || err == VK_SUBOPTIMAL_KHR) {
+            int width, height;
+            SDL_GetWindowSize(ui.sdl_window, &width, &height);
+            orbitalRebuildSwapchain(vks, wd, width, height, 2);
+        } else {
+            check_vk_result(err);
+            break;
+        }
+    }
 
     ImGui_ImplVulkanH_FrameData* fd = &wd->Frames[wd->FrameIndex];
     {
@@ -429,7 +445,11 @@ static void FramePresent(ImGui_ImplVulkanH_WindowData* wd, VulkanState* vks)
     info.pSwapchains = &wd->Swapchain;
     info.pImageIndices = &wd->FrameIndex;
     VkResult err = vkQueuePresentKHR(vks->queue, &info);
-    check_vk_result(err);
+    if (err == VK_ERROR_OUT_OF_DATE_KHR || err == VK_SUBOPTIMAL_KHR) {
+        SwapchainRebuildPending = true;
+    } else {
+        check_vk_result(err);
+    }
 }
 
 static void CleanupVulkan(ImGui_ImplVulkanH_WindowData* wd, VulkanState* vks)
@@ -592,6 +612,7 @@ static void* orbital_display_main(void* arg)
     init_info.DescriptorPool = vks->descriptor_pool; // todo: check this
     init_info.Allocator = NULL;
     init_info.CheckVkResultFn = check_vk_result;
+    init_info.QueuedFrames = wd->BackBufferCount;
     ImGui_ImplVulkan_Init(&init_info, wd->RenderPass);
 
     // Setup style
@@ -676,15 +697,20 @@ static void* orbital_display_main(void* arg)
                     ui.minimized = false;
                 case SDL_WINDOWEVENT_RESIZED:
                 case SDL_WINDOWEVENT_EXPOSED:
-                    ImGui_ImplVulkanH_CreateWindowDataSwapChainAndFramebuffer(
-                        vks->gpu, vks->device, wd, NULL,
-                        (int)event.window.data1, (int)event.window.data2);
+                    SwapchainRebuildPending = true;
                     break;
                 case SDL_WINDOWEVENT_CLOSE:
                     quit = true;
                     break;
                 }
             }
+        }
+
+        if (SwapchainRebuildPending) {
+            int w, h;
+            SDL_GetWindowSize(ui.sdl_window, &w, &h);
+            orbitalRebuildSwapchain(vks, wd, w, h, 2);
+            SwapchainRebuildPending = false;
         }
 		
         if (ui.minimized == false) {
