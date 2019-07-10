@@ -2082,23 +2082,6 @@ EOF
 fi
 LIBS="$LIBS -lz"
 
-#########################################
-# libzip check
-
-if test "$libzip" != "no" ; then
-    cat > $TMPC << EOF
-#include <zip.h>
-int main(void) { zip_libzip_version(); return 0; }
-EOF
-    if compile_prog "" "-lzip" ; then
-        :
-    else
-        error_exit "libzip check failed" \
-            "Make sure to have the libzip libs and headers installed."
-    fi
-fi
-LIBS="$LIBS -lzip"
-
 ##########################################
 # lzo check
 
