@@ -1,5 +1,6 @@
 obj-y += gca/
 obj-y += sam/
+obj-y += xxhash/
 obj-y += lvp_dce.o
 obj-y += lvp_dce_d.o
 obj-y += lvp_gart.o
