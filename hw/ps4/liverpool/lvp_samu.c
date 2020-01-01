@@ -20,7 +20,7 @@
 #include "lvp_samu.h"
 #include "lvp_gart.h"
 #include "qapi/error.h"
-#include "crypto/hash.h"
+#include "xxhash/xxhash.h"
 #include "crypto/random.h"
 #include "hw/ps4/macros.h"
 #include "hw/pci/pci.h"
@@ -63,31 +63,19 @@ static zip_t *blobs_zip = NULL;
 void liverpool_gc_samu_fakedecrypt(uint8_t *out_buffer,
     const uint8_t *in_buffer, uint64_t in_length)
 {
-    int err;
+    uint64_t hash;
     char filename[256];
-    char hashstr[33];
-    char hashchr;
-    uint8_t *hash;
-    size_t hashlen = 0;
     zip_stat_t stat;
     zip_file_t *file;
     size_t read;
 
     /* compute filename of decrypted blob */
-    err = qcrypto_hash_bytes(QCRYPTO_HASH_ALG_MD5,
-        in_buffer, in_length, &hash, &hashlen, NULL);
-    if (err) {
+    hash = XXH64(in_buffer, in_length, 0);
+    if (!hash) {
         printf("qemu: samu-fakedecrypt: Could not hash input data\n");
         return;
     }
-    memset(hashstr, 0, sizeof(hashstr));
-    for (int i = 0; i < 16; i++) {
-        hashchr = (hash[i] >> 4) & 0xF;
-        hashstr[2*i+0] = hashchr >= 0xA ? hashchr + 0x37 : hashchr + 0x30;
-        hashchr = (hash[i] >> 0) & 0xF;
-        hashstr[2*i+1] = hashchr >= 0xA ? hashchr + 0x37 : hashchr + 0x30;
-    }
-    snprintf(filename, sizeof(filename), "%s.bin", hashstr);
+    snprintf(filename, sizeof(filename), "%llX.bin", hash);
 
     /* return decrypted blob contents */
     if (zip_stat(blobs_zip, filename, 0, &stat) == -1) {
