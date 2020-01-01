@@ -23,12 +23,14 @@
  */
 
 #include "qemu/osdep.h"
+//#include <stddef.h>
+//#include <stdio.h>
 #include "qemu-common.h"
+#include "qemu/error-report.h"
+#include "qemu/thread.h"
+#include "sysemu/sysemu.h"
 #include "ui/console.h"
 #include "ui/vk-helpers.h"
-#include "qemu/thread.h"
-#include "qemu/error-report.h"
-#include "sysemu/sysemu.h"
 
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_vulkan.h>
@@ -208,6 +210,7 @@ static void check_vk_result(VkResult err)
     assert(0);
 }
 
+#define ARRAYSIZE(_ARR)          ((int)(sizeof(_ARR)/sizeof(*_ARR)))
 static void SetupVulkanWindowData(ImGui_ImplVulkanH_WindowData* wd, VulkanState* state, int width, int height)
 {
     wd->Surface = state->surface;
@@ -527,7 +530,8 @@ static void* orbital_display_main(void* arg)
         return NULL;
     }
 
-    err = SDL_Vulkan_LoadLibrary("libvulkan-1.dll");
+    // err = SDL_Vulkan_LoadLibrary("libvulkan-1.dll");
+    err = SDL_Vulkan_LoadLibrary("libvulkan.so.1");
     if (err) {
         printf("SDL_Vulkan_LoadLibrary failed: %s\n", SDL_GetError());
         return NULL;

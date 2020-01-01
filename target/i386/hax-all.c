@@ -41,9 +41,41 @@
 #include "ui/orbital-procs.h"
 #include "ui/orbital-procs-list.h"
 
+#define _SYS_SIGNAL_H_
+#define _SYS_STDINT_H_
+#define	_SYS_TYPES_H_
+#define _SYS__TYPES_H_
+#define _FREEBSD_SYS_TIME_H_
+
+#undef __P
+#undef __CONCAT
+#undef __always_inline
+#undef __nonnull
+typedef __int64_t __vm_ooffset_t;
+typedef __vm_ooffset_t vm_ooffset_t;
+
+typedef __uint64_t __vm_size_t;
+typedef __vm_size_t vm_size_t;
+
+typedef __int32_t __lwpid_t;
+typedef __lwpid_t lwpid_t;
+
+typedef __uint64_t __vm_offset_t;
+typedef __vm_offset_t vm_offset_t;
+
+typedef __uint64_t __vm_pindex_t;
+typedef __vm_pindex_t vm_pindex_t;
+
+typedef __int64_t __segsz_t;
+typedef __segsz_t segsz_t;
 #include "freebsd/sys/sys/proc.h"
 #include "freebsd/sys/amd64/include/proc.h"
+#include "freebsd/sys/vm/vm_map.h"
 
+struct orbital_proc_data {
+    struct proc proc;
+    struct vmspace vmspace;  // unused until we find its offset
+};
 #define DEBUG_HAX 0
 
 #define DPRINTF(fmt, ...) \

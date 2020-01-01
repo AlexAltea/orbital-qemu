@@ -16,7 +16,7 @@
 #include "cpu.h"
 #include "sysemu/hax.h"
 
-#ifdef CONFIG_DARWIN
+#ifdef CONFIG_POSIX
 typedef int hax_fd;
 #endif
 
@@ -85,8 +85,7 @@ int hax_host_setup_vcpu_channel(struct hax_vcpu_state *vcpu);
 hax_fd hax_mod_open(void);
 void hax_memory_init(void);
 
-
-#ifdef CONFIG_DARWIN
+#ifdef CONFIG_POSIX
 #include "target/i386/hax-darwin.h"
 #endif
 
