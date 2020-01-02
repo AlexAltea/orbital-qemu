@@ -2088,7 +2088,7 @@ LIBS="$LIBS -lz"
 if test "$libzip" != "no" ; then
     cat > $TMPC << EOF
 #include <zip.h>
-int main(void) { zip_libzip_version(); return 0; }
+int main(void) { zip_file_strerror(NULL); return 0; }
 EOF
     if compile_prog "" "-lzip" ; then
         :

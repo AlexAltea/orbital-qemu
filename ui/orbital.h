@@ -25,6 +25,10 @@
 #ifndef UI_ORBITAL_H_
 #define UI_ORBITAL_H_
 
+#ifndef _WIN32
+#define ARRAYSIZE ARRAY_SIZE
+#endif // _WIN32
+
 #include "qemu/osdep.h"
 #include "qemu-common.h"
 
